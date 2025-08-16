@@ -57,7 +57,22 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    model = {}
+    links = corpus[page]
+
+    # Return distribution with evenly distributed probability if page has no links
+    if len(links) == 0:
+        for p in corpus:
+            model[p] = 1.0 / len(corpus)
+        return model
+    
+    for p in corpus:
+        model[p] = (1.0 - damping_factor) / len(corpus)
+    
+    for p in links:
+        model[p] += damping_factor / len(links)
+
+    return model
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +84,20 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    sample = random.choice(list(corpus.keys()))
+    pagerank = None
+    counts = {p: 0 for p in corpus}
+
+    for i in range(1, n):
+        # Keep track of number of times each page was visited
+        counts[sample] += 1
+        pagerank = transition_model(corpus, sample, damping_factor)
+        
+        sample = random.choices(list(pagerank.keys()), weights=list(pagerank.values()), k=1)[0]
+
+    # Normalize values by dividing each page-visits by total number of loops
+    pagerank = {p: counts[p] / n for p in corpus}
+    return pagerank
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,7 +109,39 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    pagerank = {}
+    for p in corpus:
+        pagerank[p] = 1 / len(corpus)
+
+    diff = True
+    # Loop until changes in pagerank is minimal
+    while diff:
+        new = {}
+        diff = False
+
+        for p in corpus:
+            sum = 0
+            for link in corpus:
+                if len(corpus[link]) == 0:
+                    sum += pagerank[link] / len(corpus)
+                    
+                # Check if the page being checked is in the list of links 
+                elif p in corpus[link]:
+                    sum += pagerank[link] / len(corpus[link])
+
+            sum *= damping_factor
+            
+            new[p] = ((1-damping_factor) / len(corpus)) + sum
+
+        # Check for each value if difference between current and new is >0.001
+        for p in pagerank:
+            new_diff = abs(new[p] - pagerank[p])
+            if new_diff > 0.001:
+                diff = True
+
+        pagerank = new
+        
+    return pagerank
 
 
 if __name__ == "__main__":
