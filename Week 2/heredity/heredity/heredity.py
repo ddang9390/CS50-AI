@@ -139,7 +139,65 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    raise NotImplementedError
+    p_genes = {}
+    p_traits = {}
+    for p in people:
+        if p in one_gene:
+            p_genes[p] = PROBS["gene"][1]
+            p_traits[p] = PROBS["trait"][1][p in have_trait]
+
+        elif p in two_genes:
+            p_genes[p] = PROBS["gene"][2]
+            p_traits[p] = PROBS["trait"][2][p in have_trait]
+
+        else:
+            p_genes[p] = PROBS["gene"][0]
+            p_traits[p] = PROBS["trait"][0][p in have_trait]
+
+    joint = 1
+    for p in people:
+        p_A = p_genes[p]
+        p_B = p_traits[p]
+        mother = people[p]['mother']
+        father = people[p]['father']
+
+        if mother != None and father != None:
+            p_mother = 0
+            p_father = 0
+            if mother not in one_gene and mother not in two_genes:
+                p_mother = PROBS["mutation"]
+            else:
+                if mother in two_genes:
+                    p_mother = 1 - PROBS["mutation"]
+                else:
+                    p_mother = 0.5
+
+            if father not in one_gene and father not in two_genes:
+                p_father = PROBS["mutation"]
+            else:
+                if father in two_genes:
+                    p_father = 1 - PROBS["mutation"]
+                else:
+                    p_father = 0.5
+            
+            if p in one_gene:
+                # If there is one gene, inheritance must come from either one of the parents
+                p_A = (p_mother * (1-p_father)) + (p_father * (1-p_mother))
+                p_genes[p] = p_A
+
+            elif p in two_genes:
+                # If there are zero genes, the genes must be inherited from both of the parents
+                p_A = p_mother * p_father 
+                p_genes[p] = p_A
+
+            else:
+                # If there are zero genes, nothing can be inherited from the parents
+                p_A = (1-p_mother) * (1-p_father)
+                p_genes[p] = p_A
+
+        joint *= p_A * p_B
+
+    return joint
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
