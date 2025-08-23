@@ -224,7 +224,33 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+        values = []
+        neighbors = self.crossword.neighbors(var)
+        for val in self.domains[var]:
+            if val in assignment.values():
+                continue
+
+            conflicts = 0
+            for neighbor in neighbors:
+                overlaps = self.crossword.overlaps[var, neighbor]
+                if overlaps == None:
+                    continue
+
+                y_index = overlaps[1]
+                x_index = overlaps[0]
+                for val_y in self.domains[neighbor]:
+                    if val[x_index] != val_y[y_index]:
+                        conflicts += 1
+
+            values.append((val, conflicts))
+
+        # Sort values by their number of conflicts
+        values = sorted(values, key=lambda con: con[1])
+        answer = []
+        for val in values:
+            answer.append(val[0])
+            
+        return answer
 
     def select_unassigned_variable(self, assignment):
         """
@@ -234,7 +260,17 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        unassigned = None
+        min = float('inf')
+        for var in self.crossword.variables:
+            if var not in assignment.keys():
+                if len(self.domains[var]) < min:
+                    min = len(self.domains[var])
+                    unassigned = var
+
+        return unassigned
+
+        
 
     def backtrack(self, assignment):
         """
@@ -245,7 +281,23 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        if self.assignment_complete(assignment):
+            return assignment
+        
+        var = self.select_unassigned_variable(assignment)
+        for val in self.order_domain_values(var, assignment):
+            # If val is consistent with assignment
+            assignment[var] = val
+            if self.consistent(assignment):
+                res = self.backtrack(assignment)
+
+                if res != None:
+                    return res
+                assignment.pop(var)
+            else:
+                assignment.pop(var)
+                
+        return None
 
 
 def main():
