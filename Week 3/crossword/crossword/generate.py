@@ -149,21 +149,73 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        raise NotImplementedError
+        queue = arcs
+        # Add all arcs if none were inputted
+        if arcs == None:
+            queue = []
+            for x in self.crossword.variables:
+                for z in self.crossword.neighbors(x):
+                    queue.insert(0,(z, x))
+        
+        while len(queue) > 0:
+            x, y = queue.pop(0)
+            if self.revise(x, y):
+                if len(self.domains[x]) == 0:
+                    return False
+                for z in self.crossword.neighbors(x):
+                    if z == y:
+                        continue
+                    queue.insert(0,(z, x))
+
+        return True
+                
 
     def assignment_complete(self, assignment):
         """
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        raise NotImplementedError
+        if len(self.crossword.variables) != len(assignment.keys()):
+            return False
+        
+        complete = True
+        for key in assignment:
+            if len(self.domains[key]) == 0:
+                complete = False
+ 
+        return complete
 
     def consistent(self, assignment):
         """
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        raise NotImplementedError
+        for x in assignment:
+            distinct = set()
+            val_x = assignment[x]
+
+            # Check if values are distinct and of correct length
+            if len(val_x) != x.length or val_x in distinct:
+                return False
+            distinct.add(val_x)
+            
+            # Check for conflicts between variables
+            for y in self.crossword.neighbors(x):
+                if y not in assignment:
+                    continue
+
+                overlaps = self.crossword.overlaps[x, y]
+                if overlaps == None:
+                    continue
+                
+                val_y = assignment[y]
+                y_index = overlaps[1]
+                x_index = overlaps[0]
+
+                if val_y[y_index] != val_x[x_index]:
+                    return False
+                        
+        return True
 
     def order_domain_values(self, var, assignment):
         """
