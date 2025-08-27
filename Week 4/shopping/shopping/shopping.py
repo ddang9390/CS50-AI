@@ -5,7 +5,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
 TEST_SIZE = 0.4
-
+MONTHS = {
+    "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3,
+    "May": 4, "Jun": 5, "Jul": 6, "Aug": 7,
+    "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11,
+    "June": 5
+}
 
 def main():
 
@@ -59,7 +64,51 @@ def load_data(filename):
     labels should be the corresponding list of labels, where each label
     is 1 if Revenue is true, and 0 otherwise.
     """
-    raise NotImplementedError
+    evidence = []
+    labels = []
+
+    with open(filename, newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',')
+        next(spamreader)
+        for row in spamreader:
+            evidence_list = []
+            labels_list = []
+
+            evidence_list.append(int(row[0]))
+            evidence_list.append(float(row[1]))
+            evidence_list.append(int(row[2]))
+            evidence_list.append(float(row[3]))
+            evidence_list.append(int(row[4]))
+            evidence_list.append(float(row[5]))
+            evidence_list.append(float(row[6]))
+            evidence_list.append(float(row[7]))
+            evidence_list.append(float(row[8]))
+            evidence_list.append(float(row[9]))
+            evidence_list.append(MONTHS[row[10]])
+            evidence_list.append(int(row[11]))
+            evidence_list.append(int(row[12]))
+            evidence_list.append(int(row[13]))
+            evidence_list.append(int(row[14]))
+
+            if row[15] == 'Returning_Visitor':
+                evidence_list.append(1)
+            else:
+                evidence_list.append(0)
+
+            if row[16] == 'TRUE':
+                evidence_list.append(1)
+            else:
+                evidence_list.append(0)
+
+            if row[17] == 'TRUE':
+                labels_list.append(1)
+            else:
+                labels_list.append(0)
+
+            evidence.append(evidence_list)
+            labels.append(labels_list)
+
+    return (evidence, labels)
 
 
 def train_model(evidence, labels):
