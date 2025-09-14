@@ -63,13 +63,14 @@ def load_data(data_dir):
 
     for dir in os.listdir(data_dir):
         dir_path = os.path.join(data_dir, dir)
-        for f in os.listdir(dir_path):
-            img_path = os.path.join(dir_path, f)
-            img = cv2.imread(img_path)
-            resized_img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
-
-            images.append(resized_img)
-            labels.append(dir)
+        if os.path.isdir(dir_path):
+            for f in os.listdir(dir_path):
+                img_path = os.path.join(dir_path, f)
+                img = cv2.imread(img_path)
+                resized_img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+                
+                images.append(resized_img)
+                labels.append(int(dir))
 
     return (images, labels)
 
@@ -79,7 +80,34 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+    filters = 32
+    kernel = (3, 3)
+    model = tf.keras.models.Sequential(
+        [
+            # Convolution Layer
+            tf.keras.layers.Conv2D(filters, kernel, activation='relu', input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)),
+
+            # Pooling
+            tf.keras.layers.MaxPooling2D(pool_size=(2,2)),
+
+            # Flatten Layers
+            tf.keras.layers.Flatten(),
+
+            # Add hidden layer with dropdown
+            tf.keras.layers.Dense(128, activation="relu"),
+            tf.keras.layers.Dropout(0.5),
+
+            # Output Layer
+            tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+        ]
+    )
+    # Train/compile the neural network
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
+    return model
 
 
 if __name__ == "__main__":
