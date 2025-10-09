@@ -17,8 +17,8 @@ PIXELS_PER_WORD = 200
 
 
 def main():
-    text = input("Text: ")
-
+    #text = input("Text: ")
+    text = "I scooped up the food with a [MASK]. I picked up a [MASK] from the table. I used the [MASK] to eat soup."
     # Tokenize input
     tokenizer = AutoTokenizer.from_pretrained(MODEL)
     inputs = tokenizer(text, return_tensors="tf")
@@ -27,7 +27,7 @@ def main():
         sys.exit(f"Input must include mask token {tokenizer.mask_token}.")
 
     # Use model to process input
-    model = TFBertForMaskedLM.from_pretrained(MODEL)
+    model = TFBertForMaskedLM.from_pretrained(MODEL, from_pt=True)
     result = model(**inputs, output_attentions=True)
 
     # Generate predictions
@@ -45,8 +45,12 @@ def get_mask_token_index(mask_token_id, inputs):
     Return the index of the token with the specified `mask_token_id`, or
     `None` if not present in the `inputs`.
     """
-    # TODO: Implement this function
-    raise NotImplementedError
+    for i in range(len(inputs["input_ids"])):
+        for idx, val in enumerate(inputs["input_ids"][i]):
+            if mask_token_id == val:
+                return idx
+    
+    return None
 
 
 
@@ -55,8 +59,8 @@ def get_color_for_attention_score(attention_score):
     Return a tuple of three integers representing a shade of gray for the
     given `attention_score`. Each value should be in the range [0, 255].
     """
-    # TODO: Implement this function
-    raise NotImplementedError
+    val = int(255 * attention_score)
+    return (val, val, val)
 
 
 
@@ -70,13 +74,14 @@ def visualize_attentions(tokens, attentions):
     include both the layer number (starting count from 1) and head number
     (starting count from 1).
     """
-    # TODO: Update this function to produce diagrams for all layers and heads.
-    generate_diagram(
-        1,
-        1,
-        tokens,
-        attentions[0][0][0]
-    )
+    for layer_num, layer in enumerate(attentions):
+        for head_num, head in enumerate(layer[0]):
+            generate_diagram(
+                layer_num+1,
+                head_num+1,
+                tokens,
+                attentions[layer_num][0][head_num]
+            )
 
 
 def generate_diagram(layer_number, head_number, tokens, attention_weights):
@@ -126,7 +131,7 @@ def generate_diagram(layer_number, head_number, tokens, attention_weights):
             draw.rectangle((x, y, x + GRID_SIZE, y + GRID_SIZE), fill=color)
 
     # Save image
-    img.save(f"Attention_Layer{layer_number}_Head{head_number}.png")
+    img.save(f"output/Attention_Layer{layer_number}_Head{head_number}.png")
 
 
 if __name__ == "__main__":
